@@ -1,0 +1,355 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XAI Code Assistant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-purple: #9d00ff;
+            --dark-bg: #0a0a1f;
+            --terminal-green: #00ff9d;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: var(--terminal-green);
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 243, 255, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(157, 0, 255, 0.1) 0%, transparent 20%);
+        }
+
+        .cyber-terminal {
+            background: rgba(10, 10, 31, 0.9);
+            border: 1px solid var(--neon-blue);
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
+            backdrop-filter: blur(10px);
+            margin: 20px auto;
+            max-width: 1200px;
+        }
+
+        .header {
+            border-bottom: 2px solid var(--neon-blue);
+            padding: 1rem;
+            background: linear-gradient(90deg, rgba(0,243,255,0.1) 0%, rgba(157,0,255,0.1) 100%);
+        }
+
+        .chat-container {
+            height: 70vh;
+            overflow-y: auto;
+            padding: 1rem;
+            scrollbar-width: thin;
+            scrollbar-color: var(--neon-blue) var(--dark-bg);
+        }
+
+        .chat-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-container::-webkit-scrollbar-track {
+            background: var(--dark-bg);
+        }
+
+        .chat-container::-webkit-scrollbar-thumb {
+            background-color: var(--neon-blue);
+            border-radius: 4px;
+        }
+
+        .message {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            border-radius: 10px;
+            animation: messageAppear 0.3s ease-out;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            background: rgba(0, 243, 255, 0.1);
+            border-left: 3px solid var(--neon-blue);
+            margin-left: 2rem;
+        }
+
+        .ai-message {
+            background: rgba(157, 0, 255, 0.1);
+            border-left: 3px solid var(--neon-purple);
+            margin-right: 2rem;
+        }
+
+        .input-area {
+            background: rgba(10, 10, 31, 0.9);
+            border-top: 2px solid var(--neon-blue);
+            padding: 1rem;
+            position: sticky;
+            bottom: 0;
+        }
+
+        .cyber-input {
+            background: rgba(0, 243, 255, 0.1) !important;
+            border: 1px solid var(--neon-blue) !important;
+            color: var(--terminal-green) !important;
+            padding: 0.75rem !important;
+        }
+
+        .cyber-input:focus {
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.3) !important;
+        }
+
+        .cyber-button {
+            background: linear-gradient(45deg, var(--neon-blue), var(--neon-purple)) !important;
+            border: none !important;
+            color: white !important;
+            padding: 0.75rem 1.5rem !important;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease !important;
+        }
+
+        .cyber-button:hover {
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.5) !important;
+            transform: translateY(-2px);
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            background-color: var(--terminal-green);
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        pre {
+            background: rgba(0, 0, 0, 0.3) !important;
+            border-radius: 5px;
+            padding: 1rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            border: 1px solid var(--neon-blue);
+        }
+
+        code {
+            color: var(--terminal-green) !important;
+            font-family: 'Courier New', monospace;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes messageAppear {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--neon-blue);
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+            border-left: 3px solid #ff4444;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 5px;
+        }
+
+        .copy-button {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            background: var(--neon-blue);
+            border: none;
+            color: var(--dark-bg);
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .copy-button:hover {
+            background: var(--neon-purple);
+            color: white;
+        }
+
+        .json-response {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 5px;
+            border: 1px solid var(--neon-blue);
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="cyber-terminal">
+            <div class="header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <div class="status-indicator"></div>
+                    <h1 class="h4 mb-0">XAI/GROK TERMINAL v1.0</h1>
+                </div>
+                <div class="system-status">
+                    <small>API STATUS: CONNECTED</small>
+                </div>
+            </div>
+
+            <div class="chat-container" id="chatContainer">
+                <div class="ai-message">
+                    <div class="message-timestamp">
+                        <small>System | ${new Date().toLocaleTimeString()}</small>
+                    </div>
+                    <div class="message-content">
+                        Welcome to XAI/Grok Terminal. You can:
+                        <br>1. Ask coding questions
+                        <br>2. Request code generation
+                        <br>3. Get technical explanations
+                        <br>4. Debug code issues
+                        <br><br>How can I assist you today?
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <form id="messageForm" class="d-flex gap-2">
+                    <input type="text" id="userInput" class="form-control cyber-input" 
+                           placeholder="Enter your question or request..." autocomplete="off">
+                    <button type="submit" id="sendButton" class="btn cyber-button">
+                        Send
+                        <div class="loading d-none" id="loadingIndicator"></div>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-python.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatContainer = document.getElementById('chatContainer');
+            const messageForm = document.getElementById('messageForm');
+            const userInput = document.getElementById('userInput');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            
+            function formatResponse(content) {
+                if (typeof content === 'object') {
+                    return `<div class="json-response"><pre><code class="language-json">${JSON.stringify(content, null, 2)}</code></pre></div>`;
+                }
+                
+                // Replace code blocks with properly formatted ones
+                let formattedContent = content.replace(/```(\w+)?\n([\s\S]*?)```/g, function(match, language, code) {
+                    language = language || 'plaintext';
+                    return `
+                        <div style="position: relative;">
+                            <button class="copy-button">Copy</button>
+                            <pre><code class="language-${language}">${code.trim()}</code></pre>
+                        </div>`;
+                });
+                
+                // Replace inline code
+                formattedContent = formattedContent.replace(/`([^`]+)`/g, '<code>$1</code>');
+                
+                return formattedContent;
+            }
+
+            function addMessage(content, isUser = true, timestamp = null) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+                
+                const currentTime = timestamp || new Date().toLocaleTimeString();
+                
+                messageDiv.innerHTML = `
+                    <div class="message-timestamp">
+                        <small>${isUser ? 'User' : 'AI'} | ${currentTime}</small>
+                    </div>
+                    <div class="message-content">
+                        ${isUser ? content : formatResponse(content)}
+                    </div>
+                `;
+                
+                chatContainer.appendChild(messageDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                Prism.highlightAllUnder(messageDiv);
+            }
+
+            messageForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const message = userInput.value.trim();
+                if (!message) return;
+
+                // Add user message and clear input
+                addMessage(message, true);
+                userInput.value = '';
+                userInput.disabled = true;
+                loadingIndicator.classList.remove('d-none');
+
+                try {
+                    const response = await fetch('/ask', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ message: message })
+                    });
+
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        addMessage(data.data.response, false, data.timestamp);
+                    } else {
+                        addMessage(`Error: ${data.error}`, false, data.timestamp);
+                    }
+                } catch (error) {
+                    addMessage(`Error: Failed to get response. Please try again.`, false);
+                } finally {
+                    userInput.disabled = false;
+                    loadingIndicator.classList.add('d-none');
+                    userInput.focus();
+                }
+            });
+
+            // Add copy functionality for code blocks
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('copy-button')) {
+                    const codeBlock = e.target.nextElementSibling;
+                    navigator.clipboard.writeText(codeBlock.textContent)
+                        .then(() => {
+                            e.target.textContent = 'Copied!';
+                            setTimeout(() => {
+                                e.target.textContent = 'Copy';
+                            }, 2000);
+                        });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
